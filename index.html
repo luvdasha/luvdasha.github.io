@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#190a1f" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="description" content="Романтическая открытка с письмом, которое открывается при прокрутке." />
+  <title>Для тебя — письмо с любовью</title>
+
+  <!-- Небольшая SVG-иконка вкладки, чтобы не тянуть внешние файлы -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop stop-color='%23f7b7c5'/%3E%3Cstop offset='1' stop-color='%23e19a6b'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='18' fill='%23240d2a'/%3E%3Cpath fill='url(%23g)' d='M32 51S13 39 8.5 28.2C5.5 20.9 9.2 12.6 17 11c4.7-.9 9.3 1.4 12 5.4 2.7-4 7.3-6.3 12-5.4 7.8 1.6 11.5 9.9 8.5 17.2C45 39 32 51 32 51Z'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Если JavaScript отключён, показываем письмо сразу, без конверта -->
+  <noscript>
+    <style>
+      .story { height: auto !important; min-height: 0 !important; }
+      .stage {
+        position: relative !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        height: auto !important;
+        min-height: 100svh !important;
+        padding: 2rem var(--gutter) !important;
+      }
+      .intro,
+      .envelope-layer,
+      .seal,
+      .stage__foot,
+      .progress,
+      .scene__twinkles,
+      .scene__aura,
+      .scene__ring { display: none !important; }
+      .scene {
+        width: min(92vw, 34rem) !important;
+        aspect-ratio: auto !important;
+        margin: 0 !important;
+        cursor: auto !important;
+      }
+      .letter-clip {
+        position: relative !important;
+        inset: auto !important;
+        clip-path: none !important;
+        pointer-events: auto !important;
+      }
+      .letter {
+        position: relative !important;
+        top: auto !important;
+        left: auto !important;
+        width: 100% !important;
+        opacity: 1 !important;
+        filter: none !important;
+        transform: none !important;
+        animation: none !important;
+        pointer-events: auto !important;
+      }
+      [data-reveal] {
+        opacity: 1 !important;
+        transform: none !important;
+      }
+      .outro__inner {
+        opacity: 1 !important;
+        transform: none !important;
+      }
+      .meadow [data-meadow-reveal] {
+        opacity: 1 !important;
+        transform: none !important;
+      }
+      .meadow__breath,
+      .meadow__sun,
+      .meadow__mist,
+      .meadow__grass-sway,
+      .meadow__mote {
+        animation-play-state: running !important;
+      }
+    </style>
+  </noscript>
+</head>
+<body>
+
+  <!-- ============================================================
+       SVG-БИБЛИОТЕКА
+       Иконки используются через <use href="#...">, поэтому сайт
+       остаётся полностью автономным — без внешних изображений.
+       ============================================================ -->
+  <svg class="svg-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+    <symbol id="icon-heart" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M12 21.35 10.55 20.03C5.4 15.36 2 12.27 2 8.5 2 5.41 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.41 22 8.5c0 3.77-3.4 6.86-8.55 11.54L12 21.35Z"/>
+    </symbol>
+
+    <symbol id="icon-sparkle" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M12 0c.65 6.35 5.65 11.35 12 12-6.35.65-11.35 5.65-12 12C11.35 17.65 6.35 12.65 0 12 6.35 11.35 11.35 6.35 12 0Z"/>
+    </symbol>
+
+    <symbol id="icon-flourish" viewBox="0 0 80 80">
+      <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.15"
+        d="M5 75C5 36.3 36.3 5 75 5M13 75c0-34.2 27.8-62 62-62M21 69c7-26 27-46 53-52M5 75c14-3 25-11 32-23M52 13c-3 8-9 14-17 18"/>
+      <path fill="currentColor" opacity=".7"
+        d="M23 55c4.3 1 7.7 4.4 8.7 8.7-4.3-1-7.7-4.4-8.7-8.7ZM52.3 16.3c1 4.3 4.4 7.7 8.7 8.7-1-4.3-4.4-7.7-8.7-8.7Z"/>
+    </symbol>
+
+    <!-- Веточка для новой «зелёной» секции -->
+    <symbol id="icon-sprig" viewBox="0 0 48 48">
+      <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.2" d="M24 45V9"/>
+      <path fill="currentColor" opacity=".78" d="M24 23C14.5 23 8.6 17.2 7.4 7.7 17 7.9 23 13.5 24 23Z"/>
+      <path fill="currentColor" opacity=".58" d="M24 34c9.5 0 15.4-5.8 16.6-15.3C31 18.9 25 24.5 24 34Z"/>
+      <path fill="currentColor" opacity=".5" d="M24 16c-5-.8-8.4-4-9.2-9.5C20.3 7.3 23.4 10.5 24 16Z"/>
+    </symbol>
+  </svg>
+
+  <!-- ============================================================
+       АТМОСФЕРА
+       Мягкие световые пятна, мерцающая пыль, сердечки и лепестки.
+       Всё создано средствами CSS/SVG. Частицы генерирует script.js.
+       ============================================================ -->
+  <div class="ambient" aria-hidden="true">
+    <div class="ambient__orb ambient__orb--rose"></div>
+    <div class="ambient__orb ambient__orb--gold"></div>
+    <div class="ambient__orb ambient__orb--violet"></div>
+    <div class="ambient__veil"></div>
+    <div class="ambient__particles" id="particles"></div>
+    <div class="ambient__vignette"></div>
+    <div class="ambient__grain"></div>
+  </div>
+
+  <main class="page">
+
+    <!-- ==========================================================
+         СЕКЦИЯ 1–2. ОДНА СЦЕНА, УПРАВЛЯЕМАЯ ПРОКРУТКОЙ
+         Высота секции задаёт длину «сценария»:
+         0%   — закрытый конверт;
+         30%  — клапан открывается, печать отпускает письмо;
+         60%  — лист бумаги выезжает наружу;
+         80%  — текст письма проявляется;
+         100% — письмо можно читать.
+         ========================================================== -->
+    <section class="story" id="story" aria-label="Романтическая открытка-письмо">
+
+      <div class="stage" id="stage">
+
+        <header class="intro" id="intro">
+          <p class="intro__eyebrow">
+            <span class="intro__rule" aria-hidden="true"></span>
+            <span>с любовью</span>
+            <span class="intro__rule" aria-hidden="true"></span>
+          </p>
+          <h1 class="intro__title">Для тебя</h1>
+          <p class="intro__subtitle">маленькое письмо о большом чувстве</p>
+        </header>
+
+        <div class="scene" id="scene">
+
+          <!-- Световой ореол и тонкое кольцо вокруг конверта -->
+          <div class="scene__aura" aria-hidden="true"></div>
+          <div class="scene__ring" aria-hidden="true"></div>
+
+          <!-- Задняя часть конверта -->
+          <div class="envelope-layer envelope-layer--back">
+            <div class="env-bob">
+              <div class="envelope__shadow" aria-hidden="true"></div>
+              <div class="envelope__back" aria-hidden="true"></div>
+              <div class="envelope__inside" aria-hidden="true"></div>
+            </div>
+          </div>
+
+          <!-- ======================================================
+               БУМАЖКА С ПОСЛАНИЕМ
+               Всё, что находится внутри .letter, можно свободно
+               редактировать. Текст ниже — только пример.
+               ====================================================== -->
+          <div class="letter-clip" id="letterClip">
+            <article class="letter" id="letter" tabindex="-1" aria-labelledby="letterTitle">
+
+              <span class="letter__grain" aria-hidden="true"></span>
+              <span class="letter__border" aria-hidden="true"></span>
+
+              <span class="letter__corner letter__corner--tl" aria-hidden="true">
+                <svg viewBox="0 0 80 80"><use href="#icon-flourish"></use></svg>
+              </span>
+              <span class="letter__corner letter__corner--tr" aria-hidden="true">
+                <svg viewBox="0 0 80 80"><use href="#icon-flourish"></use></svg>
+              </span>
+              <span class="letter__corner letter__corner--bl" aria-hidden="true">
+                <svg viewBox="0 0 80 80"><use href="#icon-flourish"></use></svg>
+              </span>
+              <span class="letter__corner letter__corner--br" aria-hidden="true">
+                <svg viewBox="0 0 80 80"><use href="#icon-flourish"></use></svg>
+              </span>
+
+              <header class="letter__head" data-reveal>
+                <p class="letter__kicker">письмо для тебя</p>
+                <h2 class="letter__title" id="letterTitle">Любимая,</h2>
+              </header>
+
+              <!-- ✏️ ВСТАВЬТЕ СВОЙ ТЕКСТ ЗДЕСЬ.
+                   Меняйте только абзацы внутри .letter__body.
+                   Совет: для красивой композиции оставьте 3–5 коротких
+                   абзацев — тогда письмо целиком поместится на экране. -->
+              <div class="letter__body">
+                <p data-reveal>
+                  Есть тысячи слов, но ни одно не вмещает того, что я чувствую,
+                  когда ты рядом. Ты — мой тёплый свет, моя тихая радость
+                  и самое нежное «дома» на свете.
+                </p>
+                <p data-reveal>
+                  Спасибо за твою улыбку, за смех без причины, за руку,
+                  которую хочется держать всегда. С тобой даже самый обычный
+                  день становится маленьким чудом.
+                </p>
+                <p class="letter__accent" data-reveal>
+                  Я люблю тебя. Не за что-то, а просто потому, что ты — это ты.
+                </p>
+              </div>
+
+              <footer class="letter__foot" data-reveal>
+                <span class="letter__signoff">с любовью,</span>
+                <!-- ✏️ Здесь можно указать своё имя -->
+                <strong class="letter__name">Твой навсегда</strong>
+                <svg class="letter__heart" viewBox="0 0 24 24" aria-hidden="true">
+                  <use href="#icon-heart"></use>
+                </svg>
+              </footer>
+
+            </article>
+          </div>
+
+          <!-- Клапан конверта: при открытии поворачивается в 3D -->
+          <div class="envelope-layer envelope-layer--flap" id="flapLayer">
+            <div class="env-bob">
+              <div class="flap" id="flap" aria-hidden="true">
+                <div class="flap__face flap__face--outer"></div>
+                <div class="flap__face flap__face--inner">
+                  <svg class="flap__crest" viewBox="0 0 24 24">
+                    <use href="#icon-heart"></use>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Передняя часть конверта -->
+          <div class="envelope-layer envelope-layer--front">
+            <div class="env-bob">
+              <div class="envelope__front" aria-hidden="true">
+                <span class="envelope__front-sheen"></span>
+                <div class="envelope__label">
+                  <span>с любовью</span>
+                  <strong>для тебя</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Восковая печать. Это настоящая кнопка: нажмите, чтобы открыть -->
+          <div class="envelope-layer envelope-layer--seal">
+            <div class="env-bob">
+              <button class="seal" id="seal" type="button" aria-label="Открыть письмо и прочитать послание">
+                <span class="seal__pulse" aria-hidden="true"></span>
+                <span class="seal__wax" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><use href="#icon-heart"></use></svg>
+                </span>
+                <span class="seal__shine" aria-hidden="true"></span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Россыпь искорок, появляющаяся при открытии -->
+          <div class="scene__burst" id="sealBurst" aria-hidden="true">
+            <span class="scene__burst-flash"></span>
+          </div>
+
+          <div class="scene__twinkles" aria-hidden="true">
+            <span class="twinkle twinkle--1"><svg viewBox="0 0 24 24"><use href="#icon-sparkle"></use></svg></span>
+            <span class="twinkle twinkle--2"><svg viewBox="0 0 24 24"><use href="#icon-sparkle"></use></svg></span>
+            <span class="twinkle twinkle--3"><svg viewBox="0 0 24 24"><use href="#icon-sparkle"></use></svg></span>
+            <span class="twinkle twinkle--4"><svg viewBox="0 0 24 24"><use href="#icon-sparkle"></use></svg></span>
+            <span class="twinkle twinkle--5"><svg viewBox="0 0 24 24"><use href="#icon-sparkle"></use></svg></span>
+            <span class="twinkle twinkle--6"><svg viewBox="0 0 24 24"><use href="#icon-sparkle"></use></svg></span>
+          </div>
+
+        </div>
+
+        <div class="stage__foot">
+          <button class="scroll-hint" id="scrollHint" type="button" aria-label="Листайте вниз, чтобы открыть письмо">
+            <span class="scroll-hint__label">листайте вниз</span>
+            <span class="scroll-hint__icon" aria-hidden="true">
+              <span class="scroll-hint__line"><span class="scroll-hint__dot"></span></span>
+              <span class="scroll-hint__chevron"></span>
+            </span>
+          </button>
+        </div>
+
+        <div class="progress" aria-hidden="true">
+          <span class="progress__bar" id="progressBar"></span>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==========================================================
+         ЗАВЕРШАЮЩАЯ СЕКЦИЯ
+         Необязательный, но милый финал после прочтения письма.
+         ========================================================== -->
+    <section class="outro" id="outro" aria-labelledby="outroTitle">
+      <div class="outro__inner">
+        <svg class="outro__heart" viewBox="0 0 24 24" aria-hidden="true">
+          <use href="#icon-heart"></use>
+        </svg>
+        <p class="outro__kicker">и ещё тысячу раз</p>
+        <h2 class="outro__title" id="outroTitle">Я выбираю тебя.</h2>
+        <p class="outro__text">Каждый день. В каждом мире.<br />В каждой жизни.</p>
+        <button class="outro__replay" id="replay" type="button">
+          <span>прочитать ещё раз</span>
+          <span class="outro__replay-arrow" aria-hidden="true">↑</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ==========================================================
+         НОВАЯ СЕКЦИЯ: УТРЕННИЙ ЛУГ
+         Тёплый сливовый низ предыдущего блока растворяется в
+         прохладной зелени. Контент появляется через
+         IntersectionObserver, трава движется с параллаксом.
+         ========================================================== -->
+    <section class="meadow" id="meadow" aria-labelledby="meadowTitle">
+
+      <!-- Свет, туман и «дышащий» градиент -->
+      <div class="meadow__atmosphere" aria-hidden="true">
+        <div class="meadow__breath"></div>
+        <div class="meadow__sun"></div>
+        <div class="meadow__mist meadow__mist--one"></div>
+        <div class="meadow__mist meadow__mist--two"></div>
+        <div class="meadow__motes" id="meadowMotes"></div>
+      </div>
+
+      <!-- Три слоя травы: дальний, средний и передний.
+           data-grass-depth задаёт скорость параллакса. -->
+      <div class="meadow__grass-field" aria-hidden="true">
+
+        <div class="meadow__grass-layer meadow__grass-layer--far" data-grass-depth="0.24">
+          <div class="meadow__grass-sway meadow__grass-sway--far">
+            <svg class="meadow__grass-svg" viewBox="0 0 1440 520" preserveAspectRatio="none" focusable="false">
+              <defs>
+                <linearGradient id="meadowGrassFar" x1="0" y1="1" x2="0" y2="0">
+                  <stop offset="0" stop-color="#2c6b4f" stop-opacity=".08"/>
+                  <stop offset=".55" stop-color="#83c28e" stop-opacity=".32"/>
+                  <stop offset="1" stop-color="#dcf3ba" stop-opacity=".68"/>
+                </linearGradient>
+              </defs>
+              <path fill="url(#meadowGrassFar)" d="M-20 520 C -32 420 -20 330 8 246 C -2 344 18 442 28 520 Z
+                M68 520 C 58 450 62 380 86 306 C 82 388 96 458 104 520 Z
+                M154 520 C 144 440 148 366 174 288 C 170 376 186 454 194 520 Z
+                M246 520 C 238 454 244 390 266 326 C 262 402 278 462 286 520 Z
+                M334 520 C 320 426 334 338 368 244 C 356 350 378 444 388 520 Z
+                M432 520 C 424 446 434 382 458 316 C 452 394 468 460 476 520 Z
+                M530 520 C 518 424 532 330 566 232 C 552 346 576 446 586 520 Z
+                M638 520 C 628 450 640 386 662 326 C 656 398 674 462 682 520 Z
+                M744 520 C 732 430 746 340 780 248 C 768 352 790 444 800 520 Z
+                M852 520 C 844 452 856 388 878 330 C 872 398 888 464 896 520 Z
+                M964 520 C 952 424 968 328 1002 234 C 988 348 1012 446 1022 520 Z
+                M1080 520 C 1072 450 1084 386 1106 326 C 1100 398 1118 462 1126 520 Z
+                M1192 520 C 1180 430 1194 336 1228 244 C 1216 350 1238 444 1248 520 Z
+                M1306 520 C 1298 452 1310 388 1332 330 C 1326 398 1342 464 1350 520 Z
+                M1416 520 C 1404 424 1418 332 1452 238 C 1440 348 1462 444 1472 520 Z"/>
+              <path fill="none" stroke="url(#meadowGrassFar)" stroke-linecap="round" stroke-width="1.2"
+                d="M220 520 C 214 438 224 380 244 324 M718 520 C 716 442 730 380 754 326 M1164 520 C 1158 444 1170 388 1192 334"/>
+              <circle cx="174" cy="288" r="2" fill="#effbdd" opacity=".6"/>
+              <circle cx="780" cy="248" r="1.6" fill="#effbdd" opacity=".5"/>
+              <circle cx="1228" cy="244" r="1.8" fill="#effbdd" opacity=".55"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="meadow__grass-layer meadow__grass-layer--mid" data-grass-depth="0.58">
+          <div class="meadow__grass-sway meadow__grass-sway--mid">
+            <svg class="meadow__grass-svg" viewBox="0 0 1440 520" preserveAspectRatio="none" focusable="false">
+              <defs>
+                <linearGradient id="meadowGrassMid" x1="0" y1="1" x2="0" y2="0">
+                  <stop offset="0" stop-color="#245d43" stop-opacity=".28"/>
+                  <stop offset=".55" stop-color="#6cae7c" stop-opacity=".56"/>
+                  <stop offset="1" stop-color="#cceba6" stop-opacity=".82"/>
+                </linearGradient>
+              </defs>
+              <path fill="url(#meadowGrassMid)" d="M-70 520 C -86 402 -64 288 -18 184 C -38 306 -4 424 10 520 Z
+                M86 520 C 70 414 86 318 128 226 C 112 332 142 440 152 520 Z
+                M218 520 C 200 398 220 300 264 200 C 244 316 276 430 286 520 Z
+                M354 520 C 336 424 352 336 388 250 C 376 344 404 450 414 520 Z
+                M492 520 C 472 394 494 290 540 184 C 520 308 552 426 562 520 Z
+                M634 520 C 620 420 636 338 672 256 C 660 350 686 450 696 520 Z
+                M770 520 C 752 406 774 304 820 198 C 800 318 832 432 842 520 Z
+                M910 520 C 896 430 912 350 946 276 C 934 362 956 454 966 520 Z
+                M1048 520 C 1030 402 1052 298 1098 192 C 1076 314 1110 432 1120 520 Z
+                M1192 520 C 1178 420 1194 336 1230 254 C 1218 348 1242 452 1252 520 Z
+                M1330 520 C 1312 404 1334 294 1380 186 C 1358 310 1392 430 1402 520 Z
+                M1450 520 C 1434 420 1454 332 1492 248 C 1478 342 1500 448 1510 520 Z"/>
+              <path fill="none" stroke="url(#meadowGrassMid)" stroke-linecap="round" stroke-width="1.4"
+                d="M306 520 C 300 430 314 360 338 300 M884 520 C 878 428 894 354 918 292 M1272 520 C 1264 438 1282 370 1304 312"/>
+              <circle cx="540" cy="184" r="2.2" fill="#effbdd" opacity=".55"/>
+              <circle cx="1098" cy="192" r="1.8" fill="#effbdd" opacity=".45"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="meadow__grass-layer meadow__grass-layer--near" data-grass-depth="1">
+          <div class="meadow__grass-sway meadow__grass-sway--near">
+            <svg class="meadow__grass-svg" viewBox="0 0 1440 520" preserveAspectRatio="none" focusable="false">
+              <defs>
+                <linearGradient id="meadowGrassNear" x1="0" y1="1" x2="0" y2="0">
+                  <stop offset="0" stop-color="#02120c" stop-opacity=".98"/>
+                  <stop offset=".5" stop-color="#0a2b1d" stop-opacity=".94"/>
+                  <stop offset="1" stop-color="#2d6447" stop-opacity=".72"/>
+                </linearGradient>
+              </defs>
+              <path fill="url(#meadowGrassNear)" d="M-70 520 C -104 382 -76 236 -6 112 C -34 254 6 408 22 520 Z
+                M56 520 C 36 398 54 276 106 158 C 80 288 118 418 130 520 Z
+                M188 520 C 170 420 186 326 222 248 C 210 344 234 458 244 520 Z
+                M430 520 C 404 396 424 280 476 164 C 452 290 492 414 502 520 Z
+                M780 520 C 770 454 780 390 804 332 C 798 402 814 468 824 520 Z
+                M1040 520 C 1016 408 1038 296 1088 184 C 1062 304 1102 424 1112 520 Z
+                M1188 520 C 1164 390 1192 260 1246 136 C 1218 268 1260 408 1274 520 Z
+                M1322 520 C 1298 382 1328 242 1386 116 C 1356 256 1400 402 1414 520 Z
+                M1440 520 C 1418 420 1436 306 1480 208 C 1460 318 1492 436 1504 520 Z"/>
+            </svg>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ======================================================
+           ТЕКСТ ПОСЛАНИЯ ДЛЯ ДАШИ
+           Ниже активен средний вариант. Чтобы выбрать другой,
+           замените содержимое .meadow__letter-variant одним из
+           блоков в комментарии-подсказке внутри него.
+           ====================================================== -->
+      <div class="meadow__content" id="meadowContent">
+
+        <header class="meadow__intro">
+          <p class="meadow__eyebrow" data-meadow-reveal>
+            <span class="meadow__rule" aria-hidden="true"></span>
+            <span>утро после дождя</span>
+            <span class="meadow__rule" aria-hidden="true"></span>
+          </p>
+
+          <h2 class="meadow__title" id="meadowTitle">
+            <span class="meadow__title-line" data-meadow-reveal>Утро,</span>
+            <span class="meadow__title-line meadow__title-line--soft" data-meadow-reveal>в котором</span>
+            <span class="meadow__title-line" data-meadow-reveal>есть ты.</span>
+          </h2>
+
+          <p class="meadow__subtitle" data-meadow-reveal>иногда любовь пахнет травой и дождём</p>
+        </header>
+
+        <div class="meadow__letter">
+
+          <div class="meadow__ornament" aria-hidden="true" data-meadow-reveal>
+            <span class="meadow__ornament-line"></span>
+            <svg viewBox="0 0 48 48"><use href="#icon-sprig"></use></svg>
+            <span class="meadow__ornament-line"></span>
+          </div>
+
+          <div class="meadow__letter-variant" id="meadowLetterText">
+
+            <!--
+              ВАРИАНТЫ ПОСЛАНИЯ
+              Скопируйте нужный текст в активный блок ниже.
+              Каждому абзацу нужен атрибут data-meadow-reveal, чтобы
+              сохранилось каскадное появление.
+
+              КОРОТКИЙ:
+              Даша,
+              я люблю не громкие слова, а вот это:
+              когда ты рядом, мир становится тише — и мне хорошо.
+
+              СРЕДНИЙ (активен ниже):
+              Даша,
+              есть утро, которое пахнет травой и дождём, — и есть ты: моё самое тихое «наконец-то».
+              Я не обещаю идеальных дней. Я обещаю возвращаться к тебе, даже когда мир шумит слишком громко.
+              И каждый раз выбирать твой смех, твою руку, наше обычное «рядом».
+              Я люблю тебя. Просто. Честно. Каждый день.
+
+              РАЗВЁРНУТЫЙ:
+              Даша,
+              я думал, что нежность — это про большие слова. Она оказалась про другое: про твой смех в соседней комнате, про чай, который остывает, пока мы говорим, про руку, которую хочется держать чуть дольше обычного.
+              С тобой я не спешу казаться кем-то другим.
+              И если однажды собьюсь с пути, пусть моим компасом остаётся твой голос.
+              Я люблю тебя — тихо, честно, каждый день.
+            -->
+
+            <p class="meadow__salutation" data-meadow-reveal>Дашуль,</p>
+
+            <p class="meadow__line" data-meadow-reveal>
+              есть утро, которое пахнет травой и дождём, — и есть ты:
+              моё самое тихое «наконец-то».
+            </p>
+            <p class="meadow__line" data-meadow-reveal>
+              Я не обещаю идеальных дней. Я обещаю возвращаться к тебе,
+              даже когда мир шумит слишком громко.
+            </p>
+            <p class="meadow__line" data-meadow-reveal>
+              И каждый раз выбирать твой смех, твою руку,
+              наше обычное «рядом».
+            </p>
+            <p class="meadow__line meadow__line--accent" data-meadow-reveal>
+              Я люблю тебя очень, очень, сильно.
+            </p>
+
+          </div>
+
+          <div class="meadow__signature" data-meadow-reveal>
+            <span class="meadow__signature-label">с нежностью,</span>
+            <!-- ✏️ Можно заменить «твой» на своё имя -->
+            <strong class="meadow__signature-name">твой кот</strong>
+            <svg class="meadow__signature-leaf" viewBox="0 0 48 48" aria-hidden="true">
+              <use href="#icon-sprig"></use>
+            </svg>
+          </div>
+
+        </div>
+
+        <p class="meadow__whisper" data-meadow-reveal>надеюсь ты гордишься мной.</p>
+
+      </div>
+    </section>
+
+  </main>
+
+  <script src="js/script.js" defer></script>
+</body>
+</html>

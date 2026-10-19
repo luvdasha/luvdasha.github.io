@@ -1,0 +1,2527 @@
+/* ==========================================================================
+   ПИСЬМО ДЛЯ ТЕБЯ — романтическая открытка на чистом HTML / CSS / JS
+   --------------------------------------------------------------------------
+   Как настроить:
+   • Цвета и шрифты — в переменных :root ниже.
+   • Текст письма — в index.html, блок .letter__body (там есть комментарий).
+   • Скорость и сценарий открытия — в js/script.js, объект TIMELINE.
+   ========================================================================== */
+
+:root {
+  /* --- Палитра ----------------------------------------------------------- */
+  --night: #160817;
+  --night-soft: #261028;
+  --plum: #3f1737;
+  --wine: #6f2a49;
+  --rose: #e6a0ae;
+  --rose-deep: #a94d68;
+  --blush: #f8c9c1;
+  --peach: #f5d2b3;
+  --cream: #fff8ee;
+  --paper: #fdf6e9;
+  --gold: #f0cf9d;
+  --gold-deep: #c6945f;
+  --ink: #4d2a38;
+  --ink-soft: #76515d;
+
+  /* --- Шрифты (только системные, без внешних запросов) ------------------- */
+  --font-display: "Bodoni MT", "Didot", "Iowan Old Style", "Palatino Linotype",
+    "Book Antiqua", Georgia, "Times New Roman", serif;
+  --font-serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia,
+    "Times New Roman", serif;
+  --font-sans: "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
+  /* --- Геометрия --------------------------------------------------------- */
+  --env-width: min(88vw, 33.5rem);
+  --env-ratio: 1.38;
+  --gutter: clamp(1rem, 4vw, 2.5rem);
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+  --ease-soft: cubic-bezier(.4, 0, .2, 1);
+}
+
+/* ----------------------------- Сброс ---------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  background: var(--night);
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100%;
+  color: var(--cream);
+  background:
+    radial-gradient(120% 85% at 50% 118%, rgba(240, 155, 137, .34), transparent 58%),
+    radial-gradient(90% 70% at 5% 0%, rgba(248, 173, 194, .14), transparent 55%),
+    linear-gradient(165deg, #120612 0%, #261028 36%, #3f1737 64%, #652946 100%);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  overflow-x: clip;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+button {
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible {
+  outline: 1px solid rgba(255, 224, 186, .85);
+  outline-offset: 6px;
+}
+
+svg {
+  display: block;
+}
+
+.svg-library {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.page {
+  position: relative;
+  z-index: 1;
+}
+
+::selection {
+  color: #3d1424;
+  background: rgba(246, 199, 166, .75);
+}
+
+/* ==========================================================================
+   ФОН: световые пятна, звёздная пыль, лепестки и сердечки
+   ========================================================================== */
+
+.ambient {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  isolation: isolate;
+}
+
+.ambient__orb {
+  position: absolute;
+  border-radius: 50%;
+  will-change: transform;
+}
+
+.ambient__orb--rose {
+  top: -32vmax;
+  left: -26vmax;
+  width: 76vmax;
+  height: 76vmax;
+  background: radial-gradient(circle, rgba(255, 151, 181, .26) 0%, rgba(229, 115, 151, .08) 44%, transparent 70%);
+  animation: orbFloatA 30s ease-in-out infinite alternate;
+}
+
+.ambient__orb--gold {
+  right: -34vmax;
+  bottom: -32vmax;
+  width: 82vmax;
+  height: 82vmax;
+  background: radial-gradient(circle, rgba(250, 188, 137, .24) 0%, rgba(226, 142, 106, .07) 46%, transparent 70%);
+  animation: orbFloatB 36s ease-in-out infinite alternate;
+}
+
+.ambient__orb--violet {
+  top: 18%;
+  left: 38%;
+  width: 58vmax;
+  height: 58vmax;
+  background: radial-gradient(circle, rgba(173, 89, 160, .16) 0%, transparent 68%);
+  animation: orbFloatC 26s ease-in-out infinite alternate;
+}
+
+.ambient__veil {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 48%, transparent 0 28%, rgba(18, 5, 19, .18) 68%, rgba(13, 3, 15, .55) 100%),
+    linear-gradient(180deg, rgba(10, 3, 13, .16), transparent 28%, transparent 70%, rgba(14, 3, 15, .34));
+}
+
+.ambient__vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 46%, transparent 25%, rgba(9, 2, 12, .42) 100%);
+}
+
+.ambient__grain {
+  position: absolute;
+  inset: -20%;
+  opacity: .045;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E");
+  mix-blend-mode: soft-light;
+}
+
+.ambient__particles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.particle {
+  position: absolute;
+  top: 108%;
+  left: var(--x, 50%);
+  width: var(--size, 10px);
+  height: var(--size, 10px);
+  color: var(--color, #f6bfc9);
+  opacity: 0;
+  animation: particleRise var(--dur, 30s) linear var(--delay, 0s) infinite;
+  will-change: transform, opacity;
+}
+
+.particle__inner {
+  display: block;
+  width: 100%;
+  height: 100%;
+  animation: particleSway var(--sway-dur, 6s) ease-in-out var(--sway-delay, 0s) infinite alternate;
+}
+
+.particle svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.particle--petal .particle__inner {
+  border-radius: 100% 0 100% 0;
+  background: linear-gradient(135deg, rgba(255, 226, 209, .9), rgba(233, 152, 168, .55));
+  box-shadow: inset 1px 1px 2px rgba(255, 255, 255, .55);
+}
+
+.particle--star {
+  color: var(--gold);
+}
+
+.particle--star .particle__inner {
+  animation-name: starTwinkle;
+  animation-duration: var(--twinkle-dur, 3.4s);
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-delay: var(--twinkle-delay, 0s);
+}
+
+/* ==========================================================================
+   СЦЕНА
+   ========================================================================== */
+
+.story {
+  position: relative;
+  height: 340vh;
+  height: 340svh;
+  min-height: 1400px;
+}
+
+.stage {
+  position: sticky;
+  top: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  align-items: center;
+  justify-items: center;
+  width: 100%;
+  height: 100vh;
+  height: 100svh;
+  padding:
+    max(1.15rem, env(safe-area-inset-top))
+    var(--gutter)
+    calc(max(1rem, 2.8svh) + env(safe-area-inset-bottom));
+  overflow: hidden;
+  overflow: clip;
+}
+
+/* ----------------------------- Вступление ----------------------------- */
+
+.intro {
+  position: relative;
+  z-index: 9;
+  padding-top: .15rem;
+  text-align: center;
+  pointer-events: none;
+  opacity: var(--intro-opacity, 1);
+  transform: translate3d(0, var(--intro-y, 0px), 0);
+  will-change: transform, opacity;
+}
+
+.intro__eyebrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(.55rem, 2.2vw, .95rem);
+  margin: 0;
+  color: var(--gold);
+  font-size: clamp(.58rem, 2.4vw, .7rem);
+  font-weight: 500;
+  letter-spacing: .38em;
+  line-height: 1;
+  text-transform: uppercase;
+  text-indent: .38em;
+  opacity: 0;
+  animation: introUp 1.1s var(--ease-out) .15s both;
+}
+
+.intro__rule {
+  display: inline-block;
+  width: clamp(1.4rem, 7vw, 3.4rem);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(243, 203, 158, .8));
+}
+
+.intro__rule:last-child {
+  transform: scaleX(-1);
+}
+
+.intro__title {
+  margin: .34em 0 .28em;
+  color: var(--cream);
+  background: linear-gradient(180deg, #fffaf4 4%, #f8e1d0 48%, #e7b693 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  font-family: var(--font-display);
+  font-size: clamp(2.9rem, 10.5vw, 5.6rem);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -.015em;
+  line-height: .94;
+  text-shadow: 0 0 2.2rem rgba(255, 209, 177, .16);
+  -webkit-text-fill-color: transparent;
+  opacity: 0;
+  animation: introUp 1.15s var(--ease-out) .28s both;
+}
+
+.intro__subtitle {
+  margin: 0;
+  color: rgba(255, 232, 217, .62);
+  font-size: clamp(.58rem, 2.2vw, .7rem);
+  font-weight: 400;
+  letter-spacing: .19em;
+  line-height: 1.6;
+  text-transform: uppercase;
+  opacity: 0;
+  animation: introUp 1.1s var(--ease-out) .42s both;
+}
+
+/* ------------------------------- Сцена -------------------------------- */
+
+.scene {
+  --open: 0;
+  --rise: 0;
+  --focus: 0;
+  --seal: 0;
+  --paper-y: 0px;
+  --paper-rot: 0deg;
+  --paper-scale: .94;
+  --env-y: 0px;
+  --env-scale: 1;
+
+  position: relative;
+  z-index: 2;
+  align-self: center;
+  width: var(--env-width);
+  aspect-ratio: var(--env-ratio) / 1;
+  margin: clamp(.7rem, 2.5svh, 1.6rem) 0;
+  cursor: pointer;
+  perspective: 1400px;
+  animation: sceneIn 1.5s var(--ease-out) .05s both;
+}
+
+.scene.is-reading {
+  cursor: auto;
+}
+
+.scene.is-reading .envelope-layer,
+.scene.is-reading .envelope__front,
+.scene.is-reading .seal,
+.scene.is-reading .env-bob {
+  pointer-events: none;
+}
+
+.scene__aura,
+.scene__ring {
+  position: absolute;
+  top: 52%;
+  left: 50%;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.scene__aura {
+  z-index: 0;
+  width: 158%;
+  aspect-ratio: 1;
+  background: radial-gradient(circle, rgba(255, 218, 184, .24) 0%, rgba(248, 154, 177, .10) 39%, transparent 69%);
+  transform: translate3d(-50%, -50%, 0);
+  animation: auraBreathe 8.5s ease-in-out infinite;
+}
+
+.scene__ring {
+  z-index: 0;
+  width: 135%;
+  aspect-ratio: 1;
+  border: 1px solid rgba(255, 222, 186, .11);
+  box-shadow:
+    0 0 0 1.5rem rgba(255, 219, 181, .012),
+    0 0 0 4rem rgba(255, 180, 190, .008);
+  transform: translate3d(-50%, -50%, 0);
+  animation: ringSpin 70s linear infinite;
+}
+
+.scene__ring::before,
+.scene__ring::after {
+  content: "";
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255, 226, 184, .8);
+  box-shadow: 0 0 12px 3px rgba(255, 205, 154, .35);
+}
+
+.scene__ring::before {
+  top: 8%;
+  left: 20%;
+}
+
+.scene__ring::after {
+  right: 7%;
+  bottom: 25%;
+  width: 3px;
+  height: 3px;
+}
+
+/* ==========================================================================
+   КОНВЕРТ
+   Слои специально разделены: бумажка лежит между задней стенкой и
+   передней частью конверта — поэтому она может выезжать «изнутри».
+   ========================================================================== */
+
+.envelope-layer {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  pointer-events: none;
+  transform:
+    translate3d(0, var(--env-y), 0)
+    rotate(calc(-1.2deg + var(--focus) * 2deg))
+    scale(var(--env-scale));
+  transform-origin: 50% 62%;
+  will-change: transform, opacity;
+}
+
+.envelope-layer--back {
+  z-index: 1;
+  opacity: calc(1 - var(--focus) * 1.7);
+}
+
+.envelope-layer--flap {
+  z-index: 5;
+  perspective: 1200px;
+  opacity: calc(1 - var(--focus) * 1.8);
+}
+
+.scene.is-flap-open .envelope-layer--flap {
+  z-index: 2;
+}
+
+.envelope-layer--front {
+  z-index: 4;
+  opacity: calc(1 - var(--focus) * 2.35);
+}
+
+.envelope-layer--seal {
+  z-index: 6;
+  opacity: calc(1 - var(--seal));
+}
+
+.env-bob {
+  position: absolute;
+  inset: 0;
+  animation: envelopeBob 7.5s ease-in-out infinite;
+}
+
+/* Мягкая тень под конвертом */
+.envelope__shadow {
+  position: absolute;
+  right: 2%;
+  bottom: -13%;
+  left: 2%;
+  height: 24%;
+  background: radial-gradient(ellipse at 50% 50%, rgba(15, 3, 16, .62) 0%, rgba(28, 8, 28, .3) 40%, transparent 72%);
+  transform: scaleY(.7);
+  pointer-events: none;
+}
+
+/* Задняя стенка */
+.envelope__back {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(255, 237, 215, .55);
+  border-radius: clamp(.35rem, 1.7vw, .65rem);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, .3), transparent 28%),
+    linear-gradient(155deg, #fce7d8 0%, #f5c6bd 42%, #e5a3a5 76%, #d58f98 100%);
+  box-shadow:
+    0 2.5rem 4.5rem -1.5rem rgba(13, 2, 15, .72),
+    0 .65rem 1.25rem -0.3rem rgba(24, 5, 21, .45),
+    inset 0 1px 0 rgba(255, 255, 255, .72),
+    inset 0 -1.2rem 2.4rem rgba(140, 58, 80, .12);
+}
+
+.envelope__inside {
+  position: absolute;
+  z-index: 2;
+  inset: 2.3% 3% 5.5%;
+  overflow: hidden;
+  border-radius: clamp(.28rem, 1.4vw, .5rem);
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255, 164, 137, .25), transparent 46%),
+    repeating-linear-gradient(45deg, transparent 0 11px, rgba(255, 218, 178, .055) 11px 12px),
+    linear-gradient(180deg, #692345 0%, #48132f 58%, #371026 100%);
+  box-shadow:
+    inset 0 .5rem 1.6rem rgba(15, 2, 13, .5),
+    inset 0 -.4rem 1rem rgba(255, 158, 133, .12);
+}
+
+.envelope__inside::after {
+  content: "";
+  position: absolute;
+  right: 8%;
+  bottom: 0;
+  left: 8%;
+  height: 60%;
+  background: radial-gradient(ellipse at 50% 100%, rgba(255, 200, 161, .24), transparent 68%);
+  opacity: var(--open);
+  transition: opacity .2s linear;
+}
+
+/* Передняя часть конверта */
+.envelope__front {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 245, 231, .62);
+  border-top-color: rgba(255, 247, 235, .85);
+  border-radius: clamp(.3rem, 1.5vw, .55rem);
+  background:
+    linear-gradient(to bottom right,
+      transparent calc(50% - .6px),
+      rgba(148, 73, 84, .19) 50%,
+      transparent calc(50% + .6px)),
+    linear-gradient(to bottom left,
+      transparent calc(50% - .6px),
+      rgba(148, 73, 84, .19) 50%,
+      transparent calc(50% + .6px)),
+    radial-gradient(ellipse at 50% -18%, rgba(255, 255, 255, .64), transparent 51%),
+    linear-gradient(155deg, #ffede0 0%, #fbd0c8 47%, #edb1b1 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .82),
+    inset 0 -1.5rem 2.2rem rgba(137, 55, 75, .13),
+    0 .35rem .55rem rgba(55, 15, 33, .2);
+  pointer-events: auto;
+}
+
+.envelope__front::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  inset: clamp(.34rem, 1.2vw, .55rem);
+  border: 1px solid rgba(255, 251, 240, .42);
+  border-radius: clamp(.16rem, .8vw, .32rem);
+  pointer-events: none;
+}
+
+.envelope__front::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  top: -20%;
+  bottom: -20%;
+  left: -35%;
+  width: 30%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .38), transparent);
+  transform: translateX(-160%) skewX(-18deg);
+  animation: frontSheen 9s ease-in-out 2.2s infinite;
+  pointer-events: none;
+}
+
+.envelope__front-sheen {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 18% 12%, rgba(255, 255, 255, .42), transparent 31%),
+    radial-gradient(ellipse at 82% 88%, rgba(145, 54, 78, .12), transparent 40%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.envelope__label {
+  position: absolute;
+  z-index: 4;
+  bottom: 12.5%;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .12rem;
+  width: 80%;
+  color: #95565d;
+  text-align: center;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.envelope__label span {
+  font-family: var(--font-sans);
+  font-size: clamp(.42rem, 1.55vw, .56rem);
+  letter-spacing: .34em;
+  line-height: 1;
+  text-indent: .34em;
+  text-transform: uppercase;
+  opacity: .7;
+}
+
+.envelope__label strong {
+  font-family: var(--font-display);
+  font-size: clamp(1.05rem, 4.2vw, 1.7rem);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: .04em;
+  line-height: 1.3;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .5);
+}
+
+/* --------------------------- Клапан конверта --------------------------- */
+
+.flap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 57.5%;
+  transform: perspective(1100px) rotateX(calc(var(--open) * -168deg));
+  transform-origin: 50% 0;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.flap__face {
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.flap__face--outer {
+  background:
+    linear-gradient(90deg, transparent 49.7%, rgba(168, 94, 100, .1) 50%, transparent 50.3%),
+    radial-gradient(ellipse at 50% 5%, rgba(255, 255, 255, .5), transparent 52%),
+    linear-gradient(180deg, #ffe9dd 0%, #f5bebc 48%, #dc959e 100%);
+  filter: drop-shadow(0 .75rem .8rem rgba(43, 11, 27, .28));
+}
+
+.flap__face--outer::after {
+  content: "";
+  position: absolute;
+  top: 7%;
+  right: 10%;
+  bottom: 23%;
+  left: 10%;
+  border: 1px solid rgba(255, 249, 238, .32);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  pointer-events: none;
+}
+
+.flap__face--inner {
+  background:
+    radial-gradient(ellipse at 50% 12%, rgba(255, 195, 157, .25), transparent 46%),
+    repeating-linear-gradient(45deg, transparent 0 11px, rgba(255, 222, 185, .06) 11px 12px),
+    linear-gradient(180deg, #762b4f 0%, #501832 58%, #3a1028 100%);
+  transform: rotateX(180deg);
+  filter: drop-shadow(0 -.2rem .5rem rgba(31, 7, 24, .25));
+}
+
+.flap__face--inner::after {
+  content: "";
+  position: absolute;
+  top: 9%;
+  right: 12%;
+  bottom: 22%;
+  left: 12%;
+  border: 1px solid rgba(255, 214, 172, .18);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+.flap__crest {
+  position: absolute;
+  top: 39%;
+  left: 50%;
+  width: 11%;
+  color: rgba(255, 202, 158, .55);
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 1px 4px rgba(18, 3, 13, .3));
+}
+
+/* ----------------------------- Печать -------------------------------- */
+
+.seal {
+  position: absolute;
+  z-index: 8;
+  top: 56.5%;
+  left: 50%;
+  display: grid;
+  width: clamp(3.05rem, 13.5%, 4.35rem);
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 47% 53% 49% 51% / 52% 46% 54% 48%;
+  transform:
+    translate(-50%, -50%)
+    translateY(calc(var(--seal) * -2.9rem))
+    rotate(calc(var(--seal) * -15deg))
+    scale(calc(1 + var(--seal) * .1));
+  color: #f6d7c5;
+  background:
+    radial-gradient(circle at 35% 27%, rgba(255, 198, 183, .55), transparent 20%),
+    radial-gradient(circle at 50% 50%, #c75f74 0%, #a5415c 43%, #762b49 72%, #4e1a34 100%);
+  box-shadow:
+    0 .55rem 1.1rem rgba(24, 5, 17, .45),
+    0 .12rem .22rem rgba(44, 9, 27, .35),
+    inset 0 .1rem .2rem rgba(255, 217, 197, .28),
+    inset 0 -.16rem .3rem rgba(60, 11, 34, .55);
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+  will-change: transform;
+}
+
+.seal::before {
+  content: "";
+  position: absolute;
+  inset: 13%;
+  border: 1px solid rgba(255, 221, 196, .26);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 3px rgba(111, 31, 56, .14);
+}
+
+.seal__wax {
+  display: grid;
+  width: 54%;
+  aspect-ratio: 1;
+  place-items: center;
+}
+
+.seal__wax svg {
+  width: 100%;
+  height: 100%;
+  color: rgba(255, 221, 197, .82);
+  filter: drop-shadow(0 1px 1px rgba(66, 16, 37, .55));
+}
+
+.seal__shine {
+  position: absolute;
+  top: 13%;
+  left: 19%;
+  width: 30%;
+  height: 16%;
+  border-radius: 50%;
+  background: rgba(255, 241, 224, .34);
+  filter: blur(2px);
+  transform: rotate(-32deg);
+  pointer-events: none;
+}
+
+.seal__pulse {
+  position: absolute;
+  inset: -14%;
+  border: 1px solid rgba(255, 209, 175, .26);
+  border-radius: 50%;
+  animation: sealPulse 3.6s ease-out infinite;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   БУМАЖКА
+   ========================================================================== */
+
+.letter-clip {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  clip-path: inset(-260% -22% 2.2% -22%);
+  pointer-events: none;
+  transition: clip-path .9s var(--ease-soft);
+}
+
+.scene.is-lifted .letter-clip {
+  clip-path: inset(-260% -22% -160% -22%);
+}
+
+.letter {
+  position: absolute;
+  top: 7%;
+  left: 50%;
+  width: 86%;
+  padding: clamp(1.5rem, 6.2vw, 2.55rem) clamp(1.35rem, 5.8vw, 2.35rem) clamp(1.35rem, 5vw, 2rem);
+  border-radius: clamp(.16rem, .8vw, .32rem);
+  color: var(--ink);
+  background:
+    radial-gradient(ellipse at 8% 0%, rgba(255, 255, 255, .92), transparent 37%),
+    radial-gradient(ellipse at 95% 100%, rgba(228, 174, 146, .13), transparent 42%),
+    repeating-linear-gradient(0deg, rgba(111, 68, 48, .018) 0 1px, transparent 1px 4px),
+    linear-gradient(152deg, #fffbf3 0%, #fdf4e5 48%, #f8e8d7 100%);
+  box-shadow:
+    0 2.6rem 4.8rem -1.4rem rgba(19, 3, 16, .78),
+    0 .65rem 1.5rem rgba(40, 8, 29, .2),
+    0 0 0 1px rgba(161, 114, 74, .18),
+    inset 0 0 2.6rem rgba(173, 115, 78, .055);
+  transform:
+    translate3d(-50%, var(--paper-y), 0)
+    rotate(var(--paper-rot))
+    scale(var(--paper-scale));
+  transform-origin: 50% 0;
+  opacity: var(--paper-opacity, 0);
+  will-change: transform, opacity;
+  pointer-events: none;
+  animation: letterFloat 7.5s ease-in-out 1.2s infinite;
+}
+
+.scene.is-reading .letter {
+  pointer-events: auto;
+}
+
+.letter:focus {
+  outline: none;
+}
+
+.letter:focus-visible {
+  outline: 1px solid rgba(198, 148, 95, .78);
+  outline-offset: 6px;
+}
+
+.letter__grain {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: .34;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.55' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='.16'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+.letter__border {
+  position: absolute;
+  z-index: 3;
+  inset: clamp(.42rem, 1.8vw, .68rem);
+  border: 1px solid rgba(174, 125, 82, .31);
+  border-radius: 1px;
+  pointer-events: none;
+}
+
+.letter__border::before,
+.letter__border::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: 22%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(176, 126, 82, .4), transparent);
+  transform: translateX(-50%);
+}
+
+.letter__border::before {
+  top: -.45rem;
+}
+
+.letter__border::after {
+  bottom: -.45rem;
+}
+
+.letter__corner {
+  position: absolute;
+  z-index: 4;
+  width: clamp(2.1rem, 8.5vw, 3.5rem);
+  color: var(--gold-deep);
+  opacity: .45;
+  pointer-events: none;
+}
+
+.letter__corner svg {
+  width: 100%;
+  height: 100%;
+}
+
+.letter__corner--tl {
+  top: clamp(.65rem, 2.6vw, 1rem);
+  left: clamp(.65rem, 2.6vw, 1rem);
+}
+
+.letter__corner--tr {
+  top: clamp(.65rem, 2.6vw, 1rem);
+  right: clamp(.65rem, 2.6vw, 1rem);
+  transform: rotate(90deg);
+}
+
+.letter__corner--br {
+  right: clamp(.65rem, 2.6vw, 1rem);
+  bottom: clamp(.65rem, 2.6vw, 1rem);
+  transform: rotate(180deg);
+}
+
+.letter__corner--bl {
+  bottom: clamp(.65rem, 2.6vw, 1rem);
+  left: clamp(.65rem, 2.6vw, 1rem);
+  transform: rotate(270deg);
+}
+
+.letter__head,
+.letter__body,
+.letter__foot {
+  position: relative;
+  z-index: 2;
+}
+
+.letter__kicker {
+  margin: 0 0 .6rem;
+  color: #a9794f;
+  font-family: var(--font-sans);
+  font-size: clamp(.48rem, 1.75vw, .58rem);
+  font-weight: 600;
+  letter-spacing: .33em;
+  line-height: 1.2;
+  text-align: center;
+  text-indent: .33em;
+  text-transform: uppercase;
+}
+
+.letter__title {
+  margin: 0;
+  color: #71344b;
+  font-family: var(--font-display);
+  font-size: clamp(1.7rem, 6.3vw, 2.35rem);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -.015em;
+  line-height: 1.08;
+  text-align: center;
+}
+
+.letter__title::after {
+  content: "";
+  display: block;
+  width: 3.2rem;
+  height: 1px;
+  margin: .85rem auto 0;
+  background: linear-gradient(90deg, transparent, rgba(183, 128, 78, .55), transparent);
+}
+
+.letter__body {
+  margin-top: clamp(.9rem, 3.2svh, 1.35rem);
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: clamp(.83rem, 3.45vw, .93rem);
+  line-height: 1.68;
+  hyphens: auto;
+  overflow-wrap: break-word;
+}
+
+.letter__body p {
+  margin: 0 0 .72rem;
+}
+
+.letter__body p:last-child {
+  margin-bottom: 0;
+}
+
+.letter__accent {
+  padding-top: .12rem;
+  color: #782f4b;
+  font-family: var(--font-display);
+  font-size: 1.18em;
+  font-style: italic;
+  line-height: 1.48;
+  text-align: center;
+}
+
+.letter__foot {
+  margin-top: clamp(.95rem, 3.3svh, 1.45rem);
+  color: var(--ink-soft);
+  text-align: right;
+}
+
+.letter__signoff {
+  display: block;
+  font-family: var(--font-sans);
+  font-size: clamp(.45rem, 1.8vw, .56rem);
+  letter-spacing: .25em;
+  line-height: 1.5;
+  text-indent: .25em;
+  text-transform: uppercase;
+  opacity: .75;
+}
+
+.letter__name {
+  display: block;
+  margin-top: .17rem;
+  color: #78334e;
+  font-family: var(--font-display);
+  font-size: clamp(1.12rem, 4.5vw, 1.5rem);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: .01em;
+  line-height: 1.3;
+}
+
+.letter__heart {
+  width: 1rem;
+  height: 1rem;
+  margin: .55rem 0 0 auto;
+  color: #aa5670;
+  opacity: .72;
+}
+
+/* Вспышка и искры в момент, когда печать отпускает конверт */
+.scene__burst {
+  position: absolute;
+  z-index: 9;
+  top: 56.5%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.scene__burst-flash {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 10rem;
+  height: 10rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 237, 207, .82) 0%, rgba(255, 201, 141, .28) 30%, transparent 66%);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(.25);
+}
+
+.scene.is-bursting .scene__burst-flash {
+  animation: burstFlash .95s ease-out both;
+}
+
+.scene__burst-spark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--size, 6px);
+  height: var(--size, 6px);
+  color: var(--spark-color, #f5d09d);
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 0 4px rgba(255, 233, 185, .75));
+  will-change: transform, opacity;
+}
+
+.scene__burst-spark svg {
+  width: 100%;
+  height: 100%;
+}
+
+.scene.is-bursting .scene__burst-spark {
+  animation: burstSpark 1.15s cubic-bezier(.16, .8, .28, 1) var(--spark-delay, 0s) both;
+}
+
+/* Искорки вокруг конверта */
+.scene__twinkles {
+  position: absolute;
+  z-index: 7;
+  inset: 0;
+  opacity: var(--open);
+  pointer-events: none;
+}
+
+.twinkle {
+  position: absolute;
+  width: clamp(.55rem, 2.3vw, .85rem);
+  color: var(--gold);
+  filter: drop-shadow(0 0 7px rgba(255, 208, 154, .5));
+  animation: twinklePulse 3.2s ease-in-out infinite;
+}
+
+.twinkle svg {
+  width: 100%;
+  height: 100%;
+}
+
+.twinkle--1 {
+  top: 0;
+  left: 3%;
+  animation-delay: .1s;
+}
+
+.twinkle--2 {
+  top: 18%;
+  right: -7%;
+  width: clamp(.7rem, 2.8vw, 1rem);
+  animation-delay: 1.2s;
+}
+
+.twinkle--3 {
+  top: 43%;
+  left: -9%;
+  animation-delay: .7s;
+}
+
+.twinkle--4 {
+  right: -5%;
+  bottom: 9%;
+  width: clamp(.5rem, 2vw, .7rem);
+  animation-delay: 2.1s;
+}
+
+.twinkle--5 {
+  bottom: -4%;
+  left: 8%;
+  animation-delay: 1.7s;
+}
+
+.twinkle--6 {
+  top: -15%;
+  left: 42%;
+  width: clamp(.4rem, 1.7vw, .62rem);
+  animation-delay: 2.6s;
+}
+
+/* ==========================================================================
+   ПОДСКАЗКА И ПРОГРЕСС
+   ========================================================================== */
+
+.stage__foot {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: 3.6rem;
+  opacity: var(--hint-opacity, 1);
+  transform: translate3d(0, var(--hint-y, 0px), 0);
+  will-change: transform, opacity;
+}
+
+.scroll-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .55rem;
+  min-width: 8rem;
+  min-height: 3.25rem;
+  padding: .35rem .75rem .2rem;
+  color: rgba(255, 230, 210, .68);
+  border-radius: 1rem;
+}
+
+.scroll-hint__label {
+  font-family: var(--font-sans);
+  font-size: clamp(.52rem, 2vw, .63rem);
+  font-weight: 500;
+  letter-spacing: .34em;
+  line-height: 1.2;
+  text-indent: .34em;
+  text-transform: uppercase;
+  animation: hintPulse 2.8s ease-in-out infinite;
+}
+
+.scroll-hint__icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .28rem;
+}
+
+.scroll-hint__line {
+  position: relative;
+  display: block;
+  width: 1px;
+  height: 1.65rem;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(243, 202, 155, .12), rgba(243, 202, 155, .55));
+}
+
+.scroll-hint__dot {
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #ffe0b7;
+  box-shadow: 0 0 7px 2px rgba(255, 206, 153, .5);
+  transform: translate(-50%, 0);
+  animation: hintDot 2.2s ease-in-out infinite;
+}
+
+.scroll-hint__chevron {
+  width: .46rem;
+  height: .46rem;
+  border-right: 1px solid rgba(248, 210, 167, .6);
+  border-bottom: 1px solid rgba(248, 210, 167, .6);
+  transform: rotate(45deg);
+  animation: hintChevron 2.2s ease-in-out infinite;
+}
+
+.progress {
+  position: absolute;
+  z-index: 20;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: rgba(255, 255, 255, .055);
+  pointer-events: none;
+}
+
+.progress__bar {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(238, 166, 166, .35), #ecc08d 55%, #ffe2cb);
+  box-shadow: 0 0 12px rgba(255, 203, 151, .35);
+  transform: scaleX(var(--progress, 0));
+  transform-origin: 0 50%;
+}
+
+/* ==========================================================================
+   ФИНАЛ
+   ========================================================================== */
+
+.outro {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  min-height: 100vh;
+  min-height: 100svh;
+  place-items: center;
+  padding: clamp(4rem, 12svh, 8rem) var(--gutter);
+  text-align: center;
+  background:
+    radial-gradient(ellipse at 50% 38%, rgba(255, 192, 156, .12), transparent 48%),
+    radial-gradient(ellipse at 50% 105%, rgba(174, 72, 112, .16), transparent 58%);
+}
+
+.outro::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: min(20rem, 55vw);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(239, 200, 156, .3), transparent);
+  transform: translateX(-50%);
+}
+
+.outro__inner {
+  max-width: 36rem;
+  opacity: 0;
+  transform: translate3d(0, 2rem, 0);
+  transition:
+    opacity 1.2s var(--ease-out),
+    transform 1.2s var(--ease-out);
+}
+
+.outro.is-visible .outro__inner {
+  opacity: 1;
+  transform: none;
+}
+
+.outro__heart {
+  width: clamp(1.55rem, 5vw, 2rem);
+  margin: 0 auto clamp(1.4rem, 4svh, 2.2rem);
+  color: var(--rose);
+  opacity: .9;
+  filter: drop-shadow(0 0 14px rgba(255, 167, 184, .28));
+  animation: heartbeat 2.8s ease-in-out infinite;
+}
+
+.outro__kicker {
+  margin: 0 0 1.15rem;
+  color: var(--gold);
+  font-family: var(--font-sans);
+  font-size: clamp(.55rem, 2vw, .66rem);
+  letter-spacing: .36em;
+  text-indent: .36em;
+  text-transform: uppercase;
+  opacity: .72;
+}
+
+.outro__title {
+  margin: 0;
+  color: #fff7ed;
+  font-family: var(--font-display);
+  font-size: clamp(2.1rem, 8vw, 4.2rem);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -.018em;
+  line-height: 1.05;
+  text-shadow: 0 0 3rem rgba(255, 201, 167, .15);
+}
+
+.outro__text {
+  margin: 1.35rem 0 0;
+  color: rgba(255, 229, 213, .66);
+  font-family: var(--font-serif);
+  font-size: clamp(.9rem, 3.4vw, 1.02rem);
+  line-height: 1.75;
+}
+
+.outro__replay {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .75rem;
+  min-height: 3rem;
+  margin-top: clamp(2.1rem, 6svh, 3.2rem);
+  padding: .82rem 1.4rem;
+  color: rgba(255, 235, 219, .8);
+  border: 1px solid rgba(244, 206, 167, .27);
+  border-radius: 999px;
+  font-family: var(--font-sans);
+  font-size: .59rem;
+  font-weight: 500;
+  letter-spacing: .19em;
+  text-transform: uppercase;
+  transition:
+    color .35s ease,
+    border-color .35s ease,
+    background-color .35s ease,
+    transform .35s var(--ease-out);
+}
+
+.outro__replay:hover {
+  color: #2b1023;
+  border-color: transparent;
+  background: linear-gradient(135deg, #f6d1be, #eab29e);
+  transform: translateY(-2px);
+}
+
+.outro__replay-arrow {
+  font-size: 1rem;
+  line-height: 1;
+  transition: transform .35s var(--ease-out);
+}
+
+.outro__replay:hover .outro__replay-arrow {
+  transform: translateY(-2px);
+}
+
+/* ==========================================================================
+   АНИМАЦИИ
+   ========================================================================== */
+
+@keyframes introUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 1.1rem, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes sceneIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 1.8rem, 0) scale(.93);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes envelopeBob {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -5px, 0);
+  }
+}
+
+@keyframes letterFloat {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -4px;
+  }
+}
+
+@keyframes frontSheen {
+  0%,
+  58% {
+    transform: translateX(-160%) skewX(-18deg);
+  }
+  82%,
+  100% {
+    transform: translateX(560%) skewX(-18deg);
+  }
+}
+
+@keyframes sealPulse {
+  0% {
+    opacity: .5;
+    transform: scale(.94);
+  }
+  70% {
+    opacity: 0;
+    transform: scale(1.3);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.3);
+  }
+}
+
+@keyframes twinklePulse {
+  0%,
+  100% {
+    opacity: .22;
+    transform: scale(.65) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08) rotate(22deg);
+  }
+}
+
+@keyframes burstFlash {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(.2);
+  }
+  18% {
+    opacity: .9;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.35);
+  }
+}
+
+@keyframes burstSpark {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(.2) rotate(0deg);
+  }
+  12% {
+    opacity: var(--spark-opacity, .9);
+  }
+  58% {
+    opacity: var(--spark-opacity, .9);
+  }
+  100% {
+    opacity: 0;
+    transform:
+      translate(calc(-50% + var(--spark-x, 0px)), calc(-50% + var(--spark-y, 0px)))
+      scale(var(--spark-scale, 1))
+      rotate(var(--spark-rotate, 40deg));
+  }
+}
+
+@keyframes hintPulse {
+  0%,
+  100% {
+    opacity: .55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes hintDot {
+  0% {
+    transform: translate(-50%, 0);
+    opacity: 0;
+  }
+  22% {
+    opacity: 1;
+  }
+  78% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, 1.7rem);
+    opacity: 0;
+  }
+}
+
+@keyframes hintChevron {
+  0%,
+  100% {
+    opacity: .35;
+    transform: translateY(-2px) rotate(45deg);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(2px) rotate(45deg);
+  }
+}
+
+@keyframes auraBreathe {
+  0%,
+  100% {
+    opacity: .68;
+    transform: translate3d(-50%, -50%, 0) scale(.95);
+  }
+  50% {
+    opacity: 1;
+    transform: translate3d(-50%, -50%, 0) scale(1.06);
+  }
+}
+
+@keyframes ringSpin {
+  from {
+    transform: translate3d(-50%, -50%, 0) rotate(0deg);
+  }
+  to {
+    transform: translate3d(-50%, -50%, 0) rotate(360deg);
+  }
+}
+
+@keyframes orbFloatA {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(9vmax, 6vmax, 0) scale(1.12);
+  }
+}
+
+@keyframes orbFloatB {
+  from {
+    transform: translate3d(0, 0, 0) scale(1.05);
+  }
+  to {
+    transform: translate3d(-8vmax, -7vmax, 0) scale(.94);
+  }
+}
+
+@keyframes orbFloatC {
+  from {
+    transform: translate3d(-4vmax, 2vmax, 0) scale(.95);
+  }
+  to {
+    transform: translate3d(5vmax, -4vmax, 0) scale(1.1);
+  }
+}
+
+@keyframes particleRise {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(.62);
+  }
+  8% {
+    opacity: var(--alpha, .7);
+  }
+  82% {
+    opacity: var(--alpha, .7);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--drift, 0vw), -128vh, 0) rotate(var(--spin, 40deg)) scale(1.05);
+  }
+}
+
+@keyframes particleSway {
+  from {
+    transform: translateX(-4px) rotate(-10deg);
+  }
+  to {
+    transform: translateX(5px) rotate(12deg);
+  }
+}
+
+@keyframes starTwinkle {
+  0%,
+  100% {
+    opacity: .3;
+    transform: scale(.7) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.18) rotate(25deg);
+  }
+}
+
+@keyframes heartbeat {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  12% {
+    transform: scale(1.14);
+  }
+  24% {
+    transform: scale(.98);
+  }
+  36% {
+    transform: scale(1.08);
+  }
+}
+
+/* ==========================================================================
+   АДАПТИВНОСТЬ
+   ========================================================================== */
+
+/* Узкие телефоны */
+@media (max-width: 380px) {
+  :root {
+    --env-width: min(91vw, 22rem);
+  }
+
+  .stage {
+    padding-top: max(1rem, env(safe-area-inset-top));
+    padding-bottom: calc(max(.85rem, 2.4svh) + env(safe-area-inset-bottom));
+  }
+
+  .intro__title {
+    font-size: clamp(2.65rem, 12vw, 3.3rem);
+  }
+
+  .intro__subtitle {
+    letter-spacing: .13em;
+  }
+
+  .letter__body {
+    font-size: .8rem;
+    line-height: 1.64;
+  }
+
+  .letter__kicker {
+    letter-spacing: .24em;
+  }
+
+  .letter__title::after {
+    margin-top: .65rem;
+  }
+
+  .letter__corner {
+    width: 1.85rem;
+  }
+}
+
+/* Приземистые экраны (например, небольшие телефоны в ландшафте) */
+@media (max-height: 690px) {
+  .intro__title {
+    margin-top: .2em;
+    margin-bottom: .18em;
+    font-size: clamp(2.35rem, 8.5vw, 3.4rem);
+  }
+
+  .intro__subtitle {
+    display: none;
+  }
+
+  .stage__foot {
+    min-height: 2.9rem;
+  }
+
+  .scroll-hint__line {
+    height: 1.25rem;
+  }
+
+  .letter {
+    padding-top: 1.25rem;
+    padding-bottom: 1.15rem;
+  }
+
+  .letter__body {
+    margin-top: .75rem;
+    line-height: 1.58;
+  }
+
+  .letter__foot {
+    margin-top: .8rem;
+  }
+}
+
+/* Альбомная ориентация на телефоне: сцена компактнее, но остаётся
+   полностью видимой по высоте. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .stage {
+    grid-template-columns: minmax(8rem, 1fr) auto minmax(8rem, 1fr);
+    grid-template-rows: 1fr;
+    column-gap: 1.25rem;
+    padding-top: .7rem;
+    padding-bottom: calc(.65rem + env(safe-area-inset-bottom));
+  }
+
+  .intro {
+    justify-self: end;
+    max-width: 15rem;
+    text-align: right;
+  }
+
+  .intro__eyebrow {
+    justify-content: flex-end;
+  }
+
+  .intro__title {
+    margin: .16em 0 .12em;
+    font-size: clamp(1.85rem, 7.5vh, 2.7rem);
+  }
+
+  .intro__subtitle {
+    display: none;
+  }
+
+  .scene {
+    width: min(45vw, 18rem);
+    margin: .15rem 0;
+  }
+
+  .stage__foot {
+    justify-self: start;
+    min-height: 2.3rem;
+  }
+
+  .scroll-hint {
+    gap: .25rem;
+    min-width: 6.5rem;
+    min-height: 2.2rem;
+    padding: .15rem .4rem;
+  }
+
+  .scroll-hint__label {
+    font-size: .48rem;
+    letter-spacing: .24em;
+  }
+
+  .scroll-hint__line {
+    height: .8rem;
+  }
+
+  /* В альбомной ориентации письмо становится шире и раскладывается
+     в две аккуратные колонки — так оно помещается по высоте. */
+  .letter {
+    width: 136%;
+    padding: 1.05rem 1.3rem .95rem;
+  }
+
+  .letter__body {
+    margin-top: .55rem;
+    column-count: 2;
+    column-gap: 1rem;
+    font-size: .76rem;
+    line-height: 1.44;
+  }
+
+  .letter__body p {
+    margin-bottom: .5rem;
+  }
+
+  .letter__title {
+    font-size: 1.45rem;
+  }
+
+  .letter__title::after {
+    margin-top: .45rem;
+  }
+
+  .letter__kicker {
+    margin-bottom: .3rem;
+    font-size: .44rem;
+  }
+
+  .letter__foot {
+    margin-top: .55rem;
+  }
+
+  .letter__name {
+    font-size: 1rem;
+  }
+
+  .letter__signoff {
+    font-size: .42rem;
+  }
+
+  .letter__heart {
+    display: none;
+  }
+
+  .letter__corner {
+    width: 1.55rem;
+  }
+}
+
+/* Планшеты и десктоп */
+@media (min-width: 700px) {
+  :root {
+    --env-width: min(58vw, 33.5rem);
+  }
+
+  .stage {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    padding-bottom: clamp(1.4rem, 4svh, 2.6rem);
+  }
+
+  .scene {
+    margin-top: 1.9rem;
+  }
+
+  .intro__title {
+    font-size: clamp(4rem, 6.2vw, 5.8rem);
+  }
+
+  .letter {
+    padding: 2.4rem 2.3rem 1.9rem;
+  }
+
+  .letter__body {
+    font-size: .94rem;
+    line-height: 1.72;
+  }
+}
+
+/* Высокие десктопные экраны — чуть больше воздуха */
+@media (min-width: 1100px) and (min-height: 850px) {
+  :root {
+    --env-width: 34.5rem;
+  }
+
+  .scene {
+    margin-top: 2.8rem;
+  }
+}
+
+/* Пользователи, попросившие меньше движения */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: .001ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .ambient__particles {
+    display: none;
+  }
+
+  .scene__burst {
+    display: none;
+  }
+
+  .ambient__orb,
+  .scene__aura,
+  .scene__ring,
+  .env-bob,
+  .seal__pulse,
+  .scene__twinkles,
+  .letter,
+  .outro__heart {
+    animation: none !important;
+  }
+
+  .letter-clip {
+    transition: none;
+  }
+}
+
+/* ==========================================================================
+   НОВАЯ СЕКЦИЯ «УТРЕННИЙ ЛУГ»
+   --------------------------------------------------------------------------
+   Здесь начинается другой мир: после тёплого сливового финала цвет
+   медленно уходит в лесную зелень. Трава живёт на трёх глубинах:
+   внешний слой двигает параллакс (JavaScript), внутренний — CSS-ветер.
+   ========================================================================== */
+
+.meadow {
+  --meadow-paper: #eef7e4;
+  --meadow-muted: rgba(230, 244, 220, .74);
+  --meadow-soft: rgba(202, 231, 183, .6);
+  --meadow-lime: #d7edb1;
+  --meadow-sage: #a8cc98;
+  --meadow-deep: #071c14;
+
+  position: relative;
+  z-index: 2;
+  isolation: isolate;
+  min-height: 125vh;
+  min-height: 125svh;
+  padding:
+    clamp(9.5rem, 24vh, 17rem)
+    var(--gutter)
+    clamp(22rem, 46vh, 34rem);
+  padding-bottom:
+    clamp(22rem, 46svh, 34rem);
+  overflow: hidden;
+  overflow: clip;
+  color: var(--meadow-paper);
+  background:
+    radial-gradient(ellipse 58% 34% at 82% 22%, rgba(195, 235, 163, .12), transparent 70%),
+    radial-gradient(ellipse 72% 52% at 12% 36%, rgba(73, 143, 106, .16), transparent 71%),
+    radial-gradient(ellipse 68% 32% at 52% 44%, rgba(166, 217, 159, .075), transparent 72%),
+    linear-gradient(180deg,
+      #311427 0%,
+      #2d1c2b 8%,
+      #1c3328 22%,
+      #0e3225 44%,
+      #09271c 70%,
+      #061c14 100%);
+}
+
+/* Верхняя вуаль повторяет сливовый градиент предыдущей секции и
+   растворяется в зелени. Маска по вертикали убирает шов между блоками. */
+.meadow::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: clamp(20rem, 44vh, 34rem);
+  height: clamp(20rem, 44svh, 34rem);
+  background: linear-gradient(90deg,
+    #321328 0%,
+    #3d1a31 10%,
+    #4c2039 25%,
+    #60294a 50%,
+    #4c2039 75%,
+    #3d1a31 90%,
+    #321328 100%);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, .82) 38%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, .82) 38%, transparent 100%);
+  pointer-events: none;
+}
+
+/* ---------------------------- Атмосфера -------------------------------- */
+
+.meadow__atmosphere {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, .16) 5%, #000 18%);
+  mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, .16) 5%, #000 18%);
+}
+
+.meadow__breath {
+  position: absolute;
+  inset: -18%;
+  background:
+    radial-gradient(ellipse 36% 40% at 20% 28%, rgba(108, 185, 128, .2), transparent 72%),
+    radial-gradient(ellipse 34% 30% at 78% 20%, rgba(205, 238, 157, .14), transparent 70%),
+    radial-gradient(ellipse 48% 40% at 56% 84%, rgba(33, 105, 74, .28), transparent 73%);
+  opacity: .7;
+  animation: meadowBreath 26s ease-in-out infinite alternate;
+  animation-play-state: paused;
+  will-change: transform, opacity;
+}
+
+.meadow__sun {
+  position: absolute;
+  z-index: 1;
+  top: 5%;
+  right: -8%;
+  width: clamp(20rem, 54vw, 43rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    rgba(231, 250, 198, .22) 0%,
+    rgba(175, 221, 155, .09) 34%,
+    transparent 69%);
+  animation: meadowSun 18s ease-in-out infinite alternate;
+  animation-play-state: paused;
+  will-change: transform, opacity;
+}
+
+.meadow__mist {
+  position: absolute;
+  z-index: 1;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: meadowMist 42s ease-in-out infinite alternate;
+  animation-play-state: paused;
+  will-change: transform, opacity;
+}
+
+.meadow__mist--one {
+  bottom: 13%;
+  left: -22%;
+  width: 86%;
+  height: 32%;
+  background: radial-gradient(ellipse, rgba(197, 234, 207, .12), transparent 68%);
+}
+
+.meadow__mist--two {
+  right: -24%;
+  bottom: 3%;
+  width: 94%;
+  height: 38%;
+  background: radial-gradient(ellipse, rgba(177, 220, 193, .09), transparent 70%);
+  animation-duration: 54s;
+  animation-delay: -17s;
+  animation-direction: alternate-reverse;
+}
+
+.meadow__motes {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  overflow: hidden;
+}
+
+.meadow__mote {
+  position: absolute;
+  top: var(--mote-y, 55%);
+  left: var(--mote-x, 50%);
+  width: var(--mote-size, 3px);
+  height: var(--mote-size, 3px);
+  border-radius: 50%;
+  background: rgba(232, 251, 203, .9);
+  box-shadow: 0 0 10px 2px rgba(190, 237, 164, .24);
+  opacity: 0;
+  animation: meadowMoteRise var(--mote-duration, 18s) ease-in-out var(--mote-delay, 0s) infinite;
+  animation-play-state: paused;
+}
+
+/* Включаем все фоновые циклы только когда луг в кадре */
+.meadow.is-in-view .meadow__breath,
+.meadow.is-in-view .meadow__sun,
+.meadow.is-in-view .meadow__mist,
+.meadow.is-in-view .meadow__grass-sway,
+.meadow.is-in-view .meadow__mote {
+  animation-play-state: running;
+}
+
+/* ------------------------------- Трава --------------------------------- */
+
+.meadow__grass-field {
+  position: absolute;
+  z-index: 2;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: clamp(17rem, 38vh, 30rem);
+  height: clamp(17rem, 38svh, 30rem);
+  pointer-events: none;
+}
+
+/* Затемнение у самых корней: трава растворяется в глубине */
+.meadow__grass-field::after {
+  content: "";
+  position: absolute;
+  z-index: 5;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 38%;
+  background: linear-gradient(180deg, transparent, rgba(3, 17, 11, .8) 72%, #04160f 100%);
+  pointer-events: none;
+}
+
+.meadow__grass-layer {
+  position: absolute;
+  bottom: 0;
+  transform: translate3d(0, 0, 0);
+  transform-origin: 50% 100%;
+  will-change: transform;
+}
+
+.meadow__grass-layer--far {
+  z-index: 1;
+  bottom: 4%;
+  left: -24%;
+  width: 148%;
+  height: 94%;
+  opacity: .62;
+}
+
+.meadow__grass-layer--mid {
+  z-index: 2;
+  left: -18%;
+  width: 136%;
+  height: 105%;
+  opacity: .82;
+}
+
+.meadow__grass-layer--near {
+  z-index: 3;
+  bottom: -7%;
+  left: -15%;
+  width: 130%;
+  height: 126%;
+  opacity: .98;
+}
+
+.meadow__grass-sway {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 100%;
+  animation-play-state: paused;
+  will-change: transform;
+}
+
+.meadow__grass-sway--far {
+  animation: meadowSwayFar 12s ease-in-out -3s infinite alternate;
+}
+
+.meadow__grass-sway--mid {
+  animation: meadowSwayMid 8.5s ease-in-out -1.5s infinite alternate;
+}
+
+.meadow__grass-sway--near {
+  animation: meadowSwayNear 15s ease-in-out -7s infinite alternate;
+}
+
+.meadow__grass-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* --------------------------- Текстовый блок ---------------------------- */
+
+.meadow__content {
+  position: relative;
+  z-index: 4;
+  width: min(100%, 60rem);
+  margin: 0 auto;
+  text-align: center;
+}
+
+.meadow__intro {
+  max-width: 52rem;
+  margin: 0 auto;
+}
+
+.meadow__eyebrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(.6rem, 2vw, 1rem);
+  margin: 0;
+  color: rgba(219, 241, 199, .82);
+  font-family: var(--font-sans);
+  font-size: clamp(.6rem, 1.9vw, .7rem);
+  font-weight: 500;
+  letter-spacing: .36em;
+  line-height: 1.4;
+  text-indent: .36em;
+  text-transform: uppercase;
+}
+
+.meadow__rule {
+  display: inline-block;
+  width: clamp(1.9rem, 7vw, 4.4rem);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(209, 236, 184, .64));
+}
+
+.meadow__rule:last-child {
+  transform: scaleX(-1);
+}
+
+.meadow__title {
+  margin: clamp(1rem, 2.6svh, 1.8rem) 0 0;
+  color: #f2f8df;
+  background: linear-gradient(180deg, #f8fae8 8%, #e0f0c7 52%, #a8cc92 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  font-family: var(--font-display);
+  font-size: clamp(3.1rem, 10vw, 7.4rem);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -.025em;
+  line-height: .9;
+  text-shadow: 0 0 3.4rem rgba(187, 231, 166, .13);
+  -webkit-text-fill-color: transparent;
+}
+
+.meadow__title-line {
+  display: block;
+}
+
+.meadow__title-line--soft {
+  margin: .09em 0 .03em;
+  font-size: .56em;
+  font-style: italic;
+  letter-spacing: .01em;
+  line-height: 1.06;
+  opacity: .84;
+}
+
+.meadow__subtitle {
+  margin: clamp(1.2rem, 3.2svh, 1.9rem) auto 0;
+  color: var(--meadow-muted);
+  font-family: var(--font-serif);
+  font-size: clamp(.85rem, 2.5vw, 1.02rem);
+  font-style: italic;
+  letter-spacing: .035em;
+  line-height: 1.7;
+}
+
+/* ------------------------------ Письмо -------------------------------- */
+
+.meadow__letter {
+  width: min(100%, 38rem);
+  margin: clamp(2.6rem, 7svh, 4.8rem) auto 0;
+}
+
+.meadow__ornament {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin: 0 0 clamp(1.5rem, 3.4svh, 2.1rem);
+  color: rgba(186, 221, 161, .78);
+}
+
+.meadow__ornament svg {
+  width: 1.65rem;
+  height: 1.65rem;
+  opacity: .9;
+}
+
+.meadow__ornament-line {
+  display: block;
+  width: clamp(2.8rem, 8vw, 4.4rem);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(190, 225, 164, .5));
+}
+
+.meadow__ornament-line:last-child {
+  transform: scaleX(-1);
+}
+
+.meadow__salutation {
+  margin: 0 0 clamp(1.15rem, 3svh, 1.7rem);
+  color: #e6f4d1;
+  font-family: var(--font-display);
+  font-size: clamp(2.3rem, 7.2vw, 3.4rem);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -.01em;
+  line-height: 1;
+}
+
+.meadow__line {
+  max-width: 33rem;
+  margin: 0 auto clamp(1.05rem, 2.7svh, 1.45rem);
+  color: rgba(236, 247, 226, .82);
+  font-family: var(--font-serif);
+  font-size: clamp(.91rem, 3.2vw, 1.06rem);
+  letter-spacing: .005em;
+  line-height: 1.82;
+  text-wrap: pretty;
+}
+
+.meadow__line--accent {
+  margin-top: clamp(1.35rem, 3.6svh, 2rem);
+  color: var(--meadow-lime);
+  font-family: var(--font-display);
+  font-size: clamp(1.18rem, 4.2vw, 1.45rem);
+  font-style: italic;
+  line-height: 1.55;
+}
+
+.meadow__signature {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .22rem;
+  margin-top: clamp(1.7rem, 4.5svh, 2.5rem);
+}
+
+.meadow__signature-label {
+  color: rgba(222, 242, 204, .62);
+  font-family: var(--font-sans);
+  font-size: clamp(.55rem, 1.8vw, .62rem);
+  letter-spacing: .28em;
+  line-height: 1.4;
+  text-indent: .28em;
+  text-transform: uppercase;
+}
+
+.meadow__signature-name {
+  color: #c7e3aa;
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 4.8vw, 1.9rem);
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.3;
+}
+
+.meadow__signature-leaf {
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-top: .42rem;
+  color: rgba(191, 225, 164, .66);
+}
+
+.meadow__whisper {
+  margin: clamp(2.4rem, 6.5svh, 3.8rem) 0 0;
+  color: rgba(216, 239, 197, .6);
+  font-family: var(--font-display);
+  font-size: clamp(.86rem, 2.7vw, 1rem);
+  font-style: italic;
+  letter-spacing: .055em;
+  line-height: 1.5;
+}
+
+/* ------------------------- Reveal при прокрутке ------------------------ */
+
+.meadow [data-meadow-reveal] {
+  opacity: 0;
+  transform: translate3d(0, 1.35rem, 0);
+  transition:
+    opacity .9s var(--ease-out),
+    transform 1.05s var(--ease-out);
+  transition-delay: var(--reveal-delay, 0s);
+}
+
+.meadow.is-revealed [data-meadow-reveal] {
+  opacity: 1;
+  transform: none;
+}
+
+/* ==========================================================================
+   АНИМАЦИИ ЛУГА
+   ========================================================================== */
+
+@keyframes meadowBreath {
+  0% {
+    opacity: .64;
+    transform: translate3d(-1.5%, 1%, 0) scale(1);
+  }
+  52% {
+    opacity: .95;
+    transform: translate3d(1.4%, -1%, 0) scale(1.06);
+  }
+  100% {
+    opacity: .7;
+    transform: translate3d(-.5%, .6%, 0) scale(1.02);
+  }
+}
+
+@keyframes meadowSun {
+  0% {
+    opacity: .68;
+    transform: translate3d(0, 0, 0) scale(.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(-2.2%, 1.8%, 0) scale(1.08);
+  }
+}
+
+@keyframes meadowMist {
+  0% {
+    opacity: .48;
+    transform: translate3d(-3%, 1%, 0) scale(.98);
+  }
+  100% {
+    opacity: .9;
+    transform: translate3d(4%, -2%, 0) scale(1.07);
+  }
+}
+
+@keyframes meadowSwayFar {
+  from {
+    transform: rotate(-.22deg) translateX(-3px);
+  }
+  to {
+    transform: rotate(.42deg) translateX(4px);
+  }
+}
+
+@keyframes meadowSwayMid {
+  from {
+    transform: rotate(-.58deg) translateX(-4px);
+  }
+  to {
+    transform: rotate(.34deg) translateX(5px);
+  }
+}
+
+@keyframes meadowSwayNear {
+  from {
+    transform: rotate(-.17deg) translateX(-2px);
+  }
+  to {
+    transform: rotate(.28deg) translateX(3px);
+  }
+}
+
+@keyframes meadowMoteRise {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0) scale(.55);
+  }
+  18% {
+    opacity: var(--mote-alpha, .55);
+  }
+  72% {
+    opacity: var(--mote-alpha, .55);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--mote-drift, 16px), -38px, 0) scale(1);
+  }
+}
+
+/* ==========================================================================
+   АДАПТИВНОСТЬ НОВОЙ СЕКЦИИ
+   ========================================================================== */
+
+@media (max-width: 620px) {
+  .meadow {
+    padding-top: clamp(8.5rem, 23svh, 11rem);
+    padding-bottom: clamp(20rem, 45svh, 26rem);
+  }
+
+  .meadow__title {
+    font-size: clamp(2.9rem, 13vw, 4.6rem);
+  }
+
+  .meadow__title-line--soft {
+    font-size: .53em;
+  }
+
+  .meadow__subtitle {
+    max-width: 17rem;
+  }
+
+  .meadow__line {
+    max-width: 21rem;
+    font-size: .9rem;
+    line-height: 1.75;
+  }
+
+  .meadow__salutation {
+    font-size: clamp(2.15rem, 10vw, 2.8rem);
+  }
+
+  .meadow__grass-field {
+    height: clamp(16rem, 42svh, 22rem);
+  }
+
+  .meadow__sun {
+    top: 2%;
+    right: -30%;
+    width: 78vw;
+  }
+}
+
+@media (min-width: 900px) {
+  .meadow {
+    padding-top: clamp(12rem, 24svh, 18rem);
+  }
+
+  .meadow__content {
+    width: min(100%, 64rem);
+  }
+
+  .meadow__line {
+    max-width: 35rem;
+  }
+
+  .meadow__letter {
+    width: min(100%, 40rem);
+  }
+}
+
+/* Низкий альбомный экран: меньше воздуха, крупный заголовок не
+   занимает весь кадр, но ритм и трава остаются. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .meadow {
+    padding-top: 7.5rem;
+    padding-bottom: 16rem;
+  }
+
+  .meadow__title {
+    font-size: clamp(2.3rem, 7vh, 3.5rem);
+  }
+
+  .meadow__letter {
+    margin-top: 2rem;
+  }
+
+  .meadow__line {
+    font-size: .86rem;
+    line-height: 1.65;
+  }
+
+  .meadow__grass-field {
+    height: 14rem;
+  }
+
+  .meadow__sun {
+    width: 34vw;
+  }
+}
+
+/* Пользователи, попросившие меньше движения */
+@media (prefers-reduced-motion: reduce) {
+  .meadow__breath,
+  .meadow__sun,
+  .meadow__mist,
+  .meadow__grass-sway,
+  .meadow__mote {
+    animation: none !important;
+  }
+
+  .meadow__motes {
+    display: none;
+  }
+
+  .meadow [data-meadow-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .meadow__grass-layer {
+    transform: none !important;
+  }
+}
+
+/* Для режима высокой контрастности отказываемся от прозрачного
+   градиентного текста в пользу системного цвета. */
+@media (forced-colors: active) {
+  .meadow__title {
+    color: CanvasText;
+    background: none;
+    -webkit-text-fill-color: CanvasText;
+  }
+}
